@@ -26,8 +26,8 @@ public class GetAllFile {
         for (int i = 0; i < tempList.length; i++) {
             if (tempList[i].isFile()) {
 //              System.out.println("文     件：" + tempList[i]);
-                //fileNameList.add(tempList[i].toString());
-                fileNameList.add(tempList[i].getName());
+                fileNameList.add(tempList[i].toString());
+//                fileNameList.add(tempList[i].getName());
             }
             if (tempList[i].isDirectory()) {
 //              System.out.println("文件夹：" + tempList[i]);

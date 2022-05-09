@@ -242,15 +242,70 @@ public class FileController {
      * @return
      */
     @Login
-    @GetMapping("/selectFileByName")
-    public String selectFileByName(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+    @ResponseBody
+    @GetMapping("/api/selectFileByName")
+    public Map selectFileByName(@RequestParam("fileName") String fileName, HttpServletResponse response) {
         ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir);
+        Map<String, Object> hashMap = new HashMap<>();
+        List<Map<String, Object>> dataList = new ArrayList<>();
         for (String s : allFileName) {
             if (s.contains(fileName)) {
                 log.info(fileName);
+                log.info(s);
+                File f = new File(s);
+                Map<String, Object> m = new HashMap<>(0);
+                // 文件名称
+                m.put("name", f.getName());
+                // 修改时间
+                m.put("updateTime",f.lastModified());
+                // 是否是目录
+                m.put("isDir", f.isDirectory());
+                if (f.isDirectory()) {
+                    // 文件类型
+                    m.put("type", "dir");
+                } else {
+                    // 是否支持在线查看
+                    boolean flag = false;
+                    try {
+                        if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
+                            flag = true;
+                        }
+                        m.put("preview", flag);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String type;
+                    // 文件地址
+                    m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
+                    // 获取文件类型
+                    String contentType = null;
+                    String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
+                    try {
+                        contentType = new Tika().detect(f);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    // 获取文件图标
+                    m.put("type", getFileType(suffix, contentType));
+                    // 是否有缩略图
+                    String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
+                    if (new File(fileDir + smUrl).exists()) {
+                        m.put("hasSm", true);
+                        // 缩略图地址
+                        m.put("smUrl", smUrl);
+                    }
+                }
+                dataList.add(m);
+
             }
         }
-        return "/";
+//        dataList.add();
+        hashMap.put("code", 200);
+        hashMap.put("msg", "查询成功");
+        hashMap.put("data", dataList);
+
+        return hashMap;
     }
 
     /**
@@ -449,9 +504,9 @@ public class FileController {
     @ResponseBody
     @RequestMapping("/api/list")
     public Map list(String dir, String accept, String exts) {
-        log.info("dir:"+dir);
+        log.info("dir:" + dir);
         log.info("accept:" + accept);
-        log.info("exts:"+accept);
+        log.info("exts:" + accept);
 
         String[] mExts = null;
         if (exts != null && !exts.trim().isEmpty()) {
