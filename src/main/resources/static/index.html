@@ -37,7 +37,7 @@
                 <button id="btnRname" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-edit"></i>重命名目录
                 </button>
                 <form class="layui-form" id="selectFile" action="/api/selectFileByName" method="get" lay-filter="formDemo">
-                    <input type="text" name="fileName" required  lay-verify="required" placeholder="请输入文件名称" autocomplete="off" class="layui-input">
+                    <input id="fileName" type="text" name="fileName" required  lay-verify="required" placeholder="请输入文件名称" autocomplete="off" class="layui-input">
                     <button id="bthSelectFile" class="layui-btn layui-btn-sm layui-btn-normal icon-btn" lay-submit lay-filter="formDemo" ><i class="layui-icon layui-icon-search"></i>查找文件
                     </button>
                 </form>
@@ -154,7 +154,6 @@
             // if (!dir) {
             //     dir = $('#tvFP').text();
             // }
-            layer.load(2);
             $.get(baseServer + 'api/selectFileByName', {
                 // dir: dir
             }, function (hashMap) {
@@ -211,17 +210,28 @@
         //查找文件
 
         $('#bthSelectFile').click(function () {
+            if ($('#tvFP').text() == '/') {
+                $('#btnDelDir').hide();
+                $('#btnRname').hide();
+            } else {
+                $('#btnDelDir').show();
+                $('#btnRname').show();
+            }
+            layer.load(2);
+            var fileName = $("#fileName").val();
+            console.log(fileName)
             $.get(baseServer + 'api/selectFileByName', {
-                // dir: dir
-            }, function (hashMap) {
-                alert("Data: " + data);
+                fileName: fileName
+            }, function (res) {
+                console.log("res: " + res);
                 layer.closeAll('loading');
-                if (hashMap.code == 200) {
-                    for (var i = 0; i < hashMap.data.length; i++) {
-                        hashMap.data[i].url = baseServer + 'file/' + hashMap.data[i].url;
-                        hashMap.data[i].smUrl = baseServer + 'file/sm?p=' + hashMap.data[i].smUrl;
+                if (res.code == 200) {
+                    for (var i = 0; i < res.data.length; i++) {
+                        res.data[i].url = baseServer + 'file/' + res.data[i].url;
+                        res.data[i].smUrl = baseServer + 'file/sm?p=' + res.data[i].smUrl;
                     }
-                    laytpl(fileTpl.innerHTML).render(hashMap.data, function (html) {
+                    laytpl(fileTpl.innerHTML).render(res.data, function (html) {
+                        // $('.file-list').html(html);
                         $('.file-list').html(html);
                     });
                 } else {
@@ -230,30 +240,9 @@
             });
         });
 
-        form.on('submit(formDemo)', function () {
-            alert("Data: " + data);
-            $.get(baseServer + 'api/selectFileByName', {
-                // dir: dir
-            }, function (hashMap) {
-                alert("Data: " + data);
-                layer.closeAll('loading');
-                if (hashMap.code == 200) {
-                    for (var i = 0; i < hashMap.data.length; i++) {
-                        hashMap.data[i].url = baseServer + 'file/' + hashMap.data[i].url;
-                        hashMap.data[i].smUrl = baseServer + 'file/sm?p=' + hashMap.data[i].smUrl;
-                    }
-                    laytpl(fileTpl.innerHTML).render(hashMap.data, function (html) {
-                        $('.file-list').html(html);
-                    });
-                } else {
-                    layer.msg(res.msg, {icon: 2});
-                }
-            });
-        });
+
 
         //监听提交
-
-
         var mUrl;
         // 列表点击事件
         $('body').on('click', '.file-list-item', function (e) {
