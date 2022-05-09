@@ -5,6 +5,7 @@ import cn.org.xinke.constant.FileTypeEnum;
 import cn.org.xinke.entity.User;
 import cn.org.xinke.util.CacheUtil;
 import cn.org.xinke.util.FileTypeUtil;
+import cn.org.xinke.util.GetAllFile;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
@@ -14,16 +15,18 @@ import org.springframework.ui.ModelMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
- * @description 文件服务器
  * @author cinco
+ * @description 文件服务器
  * @date 2019-1-21
  */
 @Slf4j
@@ -33,8 +36,12 @@ public class FileController {
 
     private static final String SLASH = "/";
 
-    @Value("${fs.dir}")
-    private String fileDir;
+
+    //@Value("${fs.dir}")
+//    private String fileDir;
+
+
+    String fileDir = this.getClass().getResource("/static").getPath() + "/upload";
 
     @Value("${fs.uuidName}")
     private Boolean uuidName;
@@ -77,7 +84,7 @@ public class FileController {
     @PostMapping("/auth")
     public String auth(User user, HttpSession session) {
         if (user.getUname().equals(uname) && user.getPwd().equals(pwd)) {
-            session.setAttribute( "LOGIN_USER", user );
+            session.setAttribute("LOGIN_USER", user);
             return "redirect:/";
         }
         return "redirect:/login";
@@ -97,7 +104,7 @@ public class FileController {
     /**
      * 上传文件
      *
-     * @param file 文件
+     * @param file   文件
      * @param curPos 上传文件时所处的目录位置
      * @return Map
      */
@@ -122,6 +129,7 @@ public class FileController {
         if (uuidName != null && uuidName) {
             path = curPos + UUID.randomUUID().toString().replaceAll("-", "") + "." + suffix;
             outFile = new File(fileDir + path);
+            log.debug(fileDir);
         } else {
             int index = 1;
             path = curPos + originalFileName;
@@ -131,13 +139,15 @@ public class FileController {
                 outFile = new File(fileDir + path);
                 index++;
             }
+
+            log.debug(fileDir);
         }
         try {
             if (!outFile.getParentFile().exists()) {
                 outFile.getParentFile().mkdirs();
             }
             file.transferTo(outFile);
-            Map rs = getRS(200, "上传成功", path );
+            Map rs = getRS(200, "上传成功", path);
             //生成缩略图
             if (useSm != null && useSm) {
                 // 获取文件类型
@@ -147,13 +157,13 @@ public class FileController {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if (contentType != null && contentType.startsWith( "image/" )) {
-                    File smImg = new File(fileDir + "sm/" + path );
+                if (contentType != null && contentType.startsWith("image/")) {
+                    File smImg = new File(fileDir + "sm/" + path);
                     if (!smImg.getParentFile().exists()) {
                         smImg.getParentFile().mkdirs();
                     }
                     Thumbnails.of(outFile).scale(1f).outputQuality(0.25f).toFile(smImg);
-                    rs.put( "smUrl", "sm/" + path );
+                    rs.put("smUrl", "sm/" + path);
                 }
             }
             return rs;
@@ -178,7 +188,7 @@ public class FileController {
         }
         String newName;
         try {
-            newName = URLEncoder.encode( filePath, "utf-8" );
+            newName = URLEncoder.encode(filePath, "utf-8");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             newName = filePath;
@@ -204,15 +214,15 @@ public class FileController {
         if (!fileDir.endsWith(SLASH)) {
             fileDir += SLASH;
         }
-        outputFile(fileDir + p, download, response );
+        outputFile(fileDir + p, download, response);
         return null;
     }
 
     /**
      * 查看/下载源文件
      *
-     * @param p 文件全路径
-     * @param d 是否下载,1-下载
+     * @param p        文件全路径
+     * @param d        是否下载,1-下载
      * @param response
      * @return
      */
@@ -221,7 +231,26 @@ public class FileController {
     public String file(@RequestParam("p") String p,
                        @RequestParam(value = "d", required = true) int d,
                        HttpServletResponse response) {
-        return getFile( p, d == 1 ? true : false, response );
+        return getFile(p, d == 1 ? true : false, response);
+    }
+
+
+    /**
+     * 根据文件名字查找文件
+     *
+     * @param response
+     * @return
+     */
+    @Login
+    @GetMapping("/selectFileByName")
+    public String selectFileByName(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+        ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir);
+        for (String s : allFileName) {
+            if (s.contains(fileName)) {
+                log.info(fileName);
+            }
+        }
+        return "/";
     }
 
     /**
@@ -242,27 +271,27 @@ public class FileController {
                 if (expireDate != null && expireDate.compareTo(new Date()) > 0) {
                     url = (String) CacheUtil.get(sid);
                     // 文件是否存在
-                    File existFile = new File(fileDir + url );
+                    File existFile = new File(fileDir + url);
                     if (!existFile.exists()) {
-                        modelMap.put( "msg", "该文件已不存在~" );
+                        modelMap.put("msg", "该文件已不存在~");
                         return "error.html";
                     }
                 } else {
-                    modelMap.put( "msg", "分享文件已过期" );
+                    modelMap.put("msg", "分享文件已过期");
                     return "error.html";
                 }
             } else {
-                modelMap.put( "msg", "无效的sid" );
+                modelMap.put("msg", "无效的sid");
                 return "error.html";
             }
         }
-        return getFile( url, download, response );
+        return getFile(url, download, response);
     }
 
     /**
      * 查看/下载分享的源文件
      *
-     * @param sid 分享sid
+     * @param sid      分享sid
      * @param response
      * @return
      */
@@ -271,13 +300,13 @@ public class FileController {
                             @RequestParam(value = "d", required = true) int d,
                             HttpServletResponse response,
                             ModelMap modelMap) {
-        return returnShareFileOrSm( sid, d == 1 ? true : false, modelMap, response );
+        return returnShareFileOrSm(sid, d == 1 ? true : false, modelMap, response);
     }
 
     /**
      * 分享源文件的缩略图
      *
-     * @param sid 分享sid
+     * @param sid      分享sid
      * @param response
      * @return
      */
@@ -285,20 +314,20 @@ public class FileController {
     public String shareFileSm(@RequestParam(value = "sid", required = true) String sid,
                               HttpServletResponse response,
                               ModelMap modelMap) {
-        return returnShareFileOrSm( sid, false, modelMap, response );
+        return returnShareFileOrSm(sid, false, modelMap, response);
     }
 
     /**
      * 查看缩略图
      *
-     * @param p 文件全名
+     * @param p        文件全名
      * @param response
      * @return
      */
     @Login
     @GetMapping("/file/sm")
     public String fileSm(@RequestParam("p") String p, HttpServletResponse response) {
-        return getFile( p,false, response );
+        return getFile(p, false, response);
     }
 
     /**
@@ -338,15 +367,15 @@ public class FileController {
             response.setCharacterEncoding("UTF-8");
         } else {
             // 其他文件,强制下载
-            response.setContentType( "application/force-download" );
+            response.setContentType("application/force-download");
             String newName;
             try {
-                newName = URLEncoder.encode( inFile.getName(), "utf-8" );
+                newName = URLEncoder.encode(inFile.getName(), "utf-8");
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
                 newName = inFile.getName();
             }
-            response.setHeader("Content-Disposition", "attachment;fileName=" + newName );
+            response.setHeader("Content-Disposition", "attachment;fileName=" + newName);
         }
         // 输出文件流
         OutputStream os = null;
@@ -420,6 +449,10 @@ public class FileController {
     @ResponseBody
     @RequestMapping("/api/list")
     public Map list(String dir, String accept, String exts) {
+        log.info("dir:"+dir);
+        log.info("accept:" + accept);
+        log.info("exts:"+accept);
+
         String[] mExts = null;
         if (exts != null && !exts.trim().isEmpty()) {
             mExts = exts.split(",");
@@ -446,14 +479,14 @@ public class FileController {
                 }
                 Map<String, Object> m = new HashMap<>(0);
                 // 文件名称
-                m.put( "name", f.getName() );
+                m.put("name", f.getName());
                 // 修改时间
-                m.put( "updateTime", f.lastModified() );
+                m.put("updateTime", f.lastModified());
                 // 是否是目录
-                m.put( "isDir", f.isDirectory() );
+                m.put("isDir", f.isDirectory());
                 if (f.isDirectory()) {
                     // 文件类型
-                    m.put( "type", "dir" );
+                    m.put("type", "dir");
                 } else {
                     // 是否支持在线查看
                     boolean flag = false;
@@ -461,16 +494,16 @@ public class FileController {
                         if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
                             flag = true;
                         }
-                        m.put( "preview", flag );
+                        m.put("preview", flag);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     String type;
                     // 文件地址
-                    m.put( "url", (dir.isEmpty() ? dir : (dir + SLASH)) + f.getName() );
+                    m.put("url", (dir.isEmpty() ? dir : (dir + SLASH)) + f.getName());
                     // 获取文件类型
                     String contentType = null;
-                    String suffix = f.getName().substring( f.getName().lastIndexOf(".") + 1 );
+                    String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
                     try {
                         contentType = new Tika().detect(f);
                     } catch (IOException e) {
@@ -478,12 +511,12 @@ public class FileController {
                     }
                     // 筛选文件类型
                     if (accept != null && !accept.trim().isEmpty() && !accept.equals("file")) {
-                        if (contentType == null || !contentType.startsWith( accept + SLASH )) {
+                        if (contentType == null || !contentType.startsWith(accept + SLASH)) {
                             continue;
                         }
                         if (mExts != null) {
                             for (String ext : mExts) {
-                                if (!f.getName().endsWith( "." + ext )) {
+                                if (!f.getName().endsWith("." + ext)) {
                                     continue;
                                 }
                             }
@@ -493,10 +526,10 @@ public class FileController {
                     m.put("type", getFileType(suffix, contentType));
                     // 是否有缩略图
                     String smUrl = "sm/" + (dir.isEmpty() ? dir : (dir + SLASH)) + f.getName();
-                    if (new File(fileDir + smUrl ).exists()) {
-                        m.put( "hasSm", true );
+                    if (new File(fileDir + smUrl).exists()) {
+                        m.put("hasSm", true);
                         // 缩略图地址
-                        m.put( "smUrl", smUrl );
+                        m.put("smUrl", smUrl);
                     }
                 }
                 dataList.add(m);
@@ -520,9 +553,9 @@ public class FileController {
                 return l2.compareTo(l1);
             }
         });
-        rs.put( "code", 200 );
-        rs.put( "msg", "查询成功" );
-        rs.put( "data", dataList );
+        rs.put("code", 200);
+        rs.put("msg", "查询成功");
+        rs.put("data", dataList);
         return rs;
     }
 
@@ -562,8 +595,8 @@ public class FileController {
             fileDir += SLASH;
         }
         if (file != null && !file.isEmpty()) {
-            File f = new File(fileDir + file );
-            File smF = new File(fileDir + "sm/" + file );
+            File f = new File(fileDir + file);
+            File smF = new File(fileDir + "sm/" + file);
             if (f.exists()) {
                 // 文件
                 if (f.isFile()) {
@@ -571,7 +604,7 @@ public class FileController {
                         if (smF.exists() && smF.isFile()) {
                             smF.delete();
                         }
-                        return getRS(200, "文件删除成功" );
+                        return getRS(200, "文件删除成功");
                     }
                 } else {
                     // 目录
@@ -579,13 +612,13 @@ public class FileController {
                     if (smF.exists() && smF.isDirectory()) {
                         forDelFile(smF);
                     }
-                    return getRS(200, "目录删除成功" );
+                    return getRS(200, "目录删除成功");
                 }
             } else {
-                return getRS(500, "文件或目录不存在" );
+                return getRS(500, "文件或目录不存在");
             }
         }
-        return getRS(500, "文件或目录删除失败" );
+        return getRS(500, "文件或目录删除失败");
     }
 
     /**
@@ -606,18 +639,18 @@ public class FileController {
             fileDir += SLASH;
         }
         if (!StringUtils.isEmpty(oldFile) && !StringUtils.isEmpty(newFile)) {
-            File f = new File(fileDir + oldFile );
-            File smF = new File(fileDir + "sm/" + oldFile );
-            File nFile = new File(fileDir + newFile );
-            File nsmFile = new File(fileDir + "sm/" + newFile );
+            File f = new File(fileDir + oldFile);
+            File smF = new File(fileDir + "sm/" + oldFile);
+            File nFile = new File(fileDir + newFile);
+            File nsmFile = new File(fileDir + "sm/" + newFile);
             if (f.renameTo(nFile)) {
                 if (smF.exists()) {
                     smF.renameTo(nsmFile);
                 }
-                return getRS(200, "重命名成功", SLASH + newFile );
+                return getRS(200, "重命名成功", SLASH + newFile);
             }
         }
-        return getRS(500, "重命名失败" );
+        return getRS(500, "重命名失败");
     }
 
     /**
@@ -638,10 +671,10 @@ public class FileController {
      */
     private Map getRS(int code, String msg, String url) {
         Map<String, Object> map = new HashMap<>();
-        map.put( "code", code );
-        map.put( "msg", msg );
+        map.put("code", code);
+        map.put("msg", msg);
         if (url != null) {
-            map.put( "url", url );
+            map.put("url", url);
         }
         return map;
     }
@@ -679,13 +712,13 @@ public class FileController {
             String dirPath = fileDir + curPos + SLASH + dirName;
             File f = new File(dirPath);
             if (f.exists()) {
-                return getRS( 500, "目录已存在" );
+                return getRS(500, "目录已存在");
             }
             if (!f.exists() && f.mkdir()) {
-                return getRS(200, "创建成功" );
+                return getRS(200, "创建成功");
             }
         }
-        return getRS(500, "创建失败" );
+        return getRS(500, "创建失败");
     }
 
     /**
@@ -715,7 +748,7 @@ public class FileController {
                 if (key != null) {
                     Date expireDate = CacheUtil.dataExpireMap.get(key);
                     if (expireDate != null && expireDate.compareTo(new Date()) > 0) {
-                        return getRS(200, "该文件已分享", domain + SLASH + "share?sid=" + key );
+                        return getRS(200, "该文件已分享", domain + SLASH + "share?sid=" + key);
                     }
                 }
             }
@@ -727,14 +760,14 @@ public class FileController {
             fileDir += SLASH;
         }
         String sid = UUID.randomUUID().toString();
-        CacheUtil.put( sid, file, time );
-        return getRS(200, "分享成功", domain + SLASH + "share?sid=" + sid );
+        CacheUtil.put(sid, file, time);
+        return getRS(200, "分享成功", domain + SLASH + "share?sid=" + sid);
     }
 
     /**
      * 分享文件展示页面
      *
-     * @param sid 分享文件sid
+     * @param sid      分享文件sid
      * @param modelMap
      * @return
      */
@@ -747,45 +780,45 @@ public class FileController {
                 if (expireDate != null && expireDate.compareTo(new Date()) > 0) {
                     String url = (String) CacheUtil.get(sid);
                     // 文件是否存在
-                    File existFile = new File(fileDir + url );
+                    File existFile = new File(fileDir + url);
                     if (!existFile.exists()) {
-                        modelMap.put( "exists", false );
-                        modelMap.put( "msg", "该文件已不存在~" );
+                        modelMap.put("exists", false);
+                        modelMap.put("msg", "该文件已不存在~");
                         return "share";
                     }
                     // 检测文件类型
                     String contentType = null;
-                    String suffix = existFile.getName().substring( existFile.getName().lastIndexOf(".") + 1 );
+                    String suffix = existFile.getName().substring(existFile.getName().lastIndexOf(".") + 1);
                     try {
                         contentType = new Tika().detect(existFile);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     // 获取文件图标、文件名、图片文件缩略图片地址、过期时间
-                    modelMap.put( "sid", sid );
-                    modelMap.put( "type", getFileType(suffix, contentType) );
-                    modelMap.put( "exists", true );
-                    modelMap.put( "fileName", url.substring(url.lastIndexOf('/') + 1) );
+                    modelMap.put("sid", sid);
+                    modelMap.put("type", getFileType(suffix, contentType));
+                    modelMap.put("exists", true);
+                    modelMap.put("fileName", url.substring(url.lastIndexOf('/') + 1));
                     // 是否有缩略图
                     String smUrl = "sm/" + url;
-                    if (new File(fileDir + smUrl ).exists()) {
-                        modelMap.put( "hasSm", true );
+                    if (new File(fileDir + smUrl).exists()) {
+                        modelMap.put("hasSm", true);
                         // 缩略图地址
-                        modelMap.put( "smUrl", "share/file/sm?sid=" + sid );
+                        modelMap.put("smUrl", "share/file/sm?sid=" + sid);
                     }
-                    modelMap.put( "expireTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(CacheUtil.dataExpireMap.get(sid)) );
+                    modelMap.put("expireTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(CacheUtil.dataExpireMap.get(sid)));
                     // 是否支持浏览器在线查看
                     boolean flag = false;
                     if (FileTypeUtil.canOnlinePreview(contentType)) {
                         flag = true;
                     }
-                    modelMap.put( "preview", flag );
+                    modelMap.put("preview", flag);
                     return "share";
                 }
             }
         }
-        modelMap.put( "exists", false );
-        modelMap.put( "msg", "分享不存在或已经失效~" );
+        modelMap.put("exists", false);
+        modelMap.put("msg", "分享不存在或已经失效~");
         return "share";
     }
 

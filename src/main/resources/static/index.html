@@ -36,6 +36,11 @@
                 </button>
                 <button id="btnRname" class="layui-btn layui-btn-sm layui-btn-primary icon-btn"><i class="layui-icon layui-icon-edit"></i>重命名目录
                 </button>
+                <form class="layui-form" action="/selectFileByName" method="get">
+                    <input type="text" name="fileName" required  lay-verify="required" placeholder="请输入文件名称" autocomplete="off" class="layui-input">
+                    <button id="bthSelectFile" class="layui-btn layui-btn-sm layui-btn-normal icon-btn"><i class="layui-icon layui-icon-search"></i>查找文件
+                    </button>
+                </form>
             </div>
 
             <div class="file-list"></div>
@@ -43,13 +48,13 @@
     </div>
 </div>
 
-<div style="text-align: center;margin: 60px 0 20px 0">
-    <a style="color: #777;" href="https://xinke.org.cn" target="_blank">ECode1024</a> |
-    <a style="color: #777;" href="https://tool.xinke.org.cn" target="_blank">工具帝国</a> |
-    <a style="color: #777;" href="https://piiic.xinke.org.cn" target="_blank">长图工具</a> |
-    <a style="color: #777;" href="https://codeif.xinke.org.cn" target="_blank">CodeIF</a> |
-    <a style="color: #777;" href="https://sorry.xinke.org.cn" target="_blank">Sorry生成</a>
-</div>
+<!--<div style="text-align: center;margin: 60px 0 20px 0">-->
+<!--    <a style="color: #777;" href="https://xinke.org.cn" target="_blank">ECode1024</a> |-->
+<!--    <a style="color: #777;" href="https://tool.xinke.org.cn" target="_blank">工具帝国</a> |-->
+<!--    <a style="color: #777;" href="https://piiic.xinke.org.cn" target="_blank">长图工具</a> |-->
+<!--    <a style="color: #777;" href="https://codeif.xinke.org.cn" target="_blank">CodeIF</a> |-->
+<!--    <a style="color: #777;" href="https://sorry.xinke.org.cn" target="_blank">Sorry生成</a>-->
+<!--</div>-->
 
 <!-- 下拉菜单 -->
 <div class="dropdown-menu dropdown-anchor-top-left" id="dropdownFile">
@@ -168,6 +173,8 @@
         $('#btnRefresh').click(function () {
             renderList();
         });
+        //查找文件
+        bthSelectFile
 
         var mUrl;
         // 列表点击事件
