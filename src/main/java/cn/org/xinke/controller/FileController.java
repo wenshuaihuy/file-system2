@@ -243,8 +243,8 @@ public class FileController {
      */
     @Login
     @ResponseBody
-    @GetMapping("/api/selectFileByName")
-    public Map selectFileByName(@RequestParam("fileName") String fileName, HttpServletResponse response) {
+    @RequestMapping("/api/selectFileByName")
+    public Map selectFileByName(String fileName, HttpServletResponse response) {
         ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir);
         Map<String, Object> hashMap = new HashMap<>();
         List<Map<String, Object>> dataList = new ArrayList<>();

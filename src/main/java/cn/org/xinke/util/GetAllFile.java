@@ -9,16 +9,17 @@ import java.util.Arrays;
  * @date 2022/5/9 12:42 下午
  */
 public class GetAllFile {
+    static ArrayList<String> fileNameList = new ArrayList<String>();
     public static void main(String[] args) {
         String fileDir = "/Users/wsh/Projects/file-system2/target/classes/static/upload/";
         ArrayList<String> allFileName = getAllFileName(fileDir);
+        System.out.println("size:" +allFileName.size());
         for (String s : allFileName) {
             System.out.println(s);
         }
     }
 
     public static ArrayList<String> getAllFileName(String path) {
-        ArrayList<String> fileNameList = new ArrayList<String>();
         boolean flag = false;
         File file = new File(path);
         File[] tempList = file.listFiles();
@@ -31,6 +32,7 @@ public class GetAllFile {
             }
             if (tempList[i].isDirectory()) {
 //              System.out.println("文件夹：" + tempList[i]);
+
                 getAllFileName(tempList[i].getAbsolutePath());
             }
         }
