@@ -28,10 +28,7 @@ public class GetAllFile {
             return null;
         }
         File file = new File(path);
-
         File[] tempList = file.listFiles();
-
-
         for (int i = 0; i < tempList.length; i++) {
             if (tempList[i].isFile()) {
 //              System.out.println("文     件：" + tempList[i]);

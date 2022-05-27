@@ -37,11 +37,12 @@ public class FileController {
     private static final String SLASH = "/";
 
 
-    //@Value("${fs.dir}")
-//    private String fileDir;
+    @Value("${fs.dir}")
+//    @Value("${server.tomcat.basedir}")
+    private String fileDir;
 
 
-    String fileDir = this.getClass().getResource("/static").getPath() + "/upload";
+//    String fileDir = this.getClass().getResource("/static").getPath() + "/upload";
 
     @Value("${fs.uuidName}")
     private Boolean uuidName;
@@ -112,13 +113,35 @@ public class FileController {
     @ResponseBody
     @PostMapping("/file/upload")
     public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos) {
+        log.debug("fileDir0==" + fileDir);
+//        if (fileDir != null &&fileDir.contains("file:/")) {
+//            String[] split = fileDir.split(":/");
+//            fileDir = split[1];
+//            String[] split1 = fileDir.split("file-system/");
+//            fileDir = split1[0] + "file-system/upload/";
+//        }
+        String os = System.getProperty("os.name");
+        log.debug("os.name：" + os);
+        boolean mac_os = os.contains("Mac OS");
+        if (os.contains("Mac OS")) {
+            fileDir = "/Users/Shared/fileSystem/";
+        }
+
         curPos = curPos.substring(1) + SLASH;
+        log.debug("fileDir1==" + fileDir);
+        log.debug("SLASH==" + SLASH);
         if (fileDir == null) {
             fileDir = SLASH;
         }
         if (!fileDir.endsWith(SLASH)) {
             fileDir += SLASH;
         }
+        log.debug("fileDir2==" + fileDir);
+//        File file1 = new File(fileDir);
+//        if (!file1.exists()) {
+//            file1.mkdirs();
+//        }
+
         // 文件原始名称
         String originalFileName = file.getOriginalFilename();
         String suffix = originalFileName.substring(originalFileName.lastIndexOf(".") + 1);
@@ -129,18 +152,34 @@ public class FileController {
         if (uuidName != null && uuidName) {
             path = curPos + UUID.randomUUID().toString().replaceAll("-", "") + "." + suffix;
             outFile = new File(fileDir + path);
-            log.debug(fileDir);
+//            if (!outFile.exists()){
+//                try {
+//                    outFile.createNewFile();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+            log.debug("fileDir3==" + fileDir);
+            log.debug("path==" + path);
         } else {
             int index = 1;
             path = curPos + originalFileName;
             outFile = new File(fileDir + path);
+//            if (!outFile.exists()){
+//                try {
+//                    outFile.createNewFile();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
             while (outFile.exists()) {
                 path = curPos + prefix + "(" + index + ")." + suffix;
                 outFile = new File(fileDir + path);
                 index++;
             }
 
-            log.debug(fileDir);
+            log.debug("fileDi4r==" + fileDir);
+            log.debug("path==" + path);
         }
         try {
             if (!outFile.getParentFile().exists()) {
