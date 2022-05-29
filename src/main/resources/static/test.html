@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" type="text/css" href="assets/layui/css/layui.css">
+  <script type="text/javascript" src="assets/layui/layui.js"></script>
+  <script type="text/javascript">
+    //下拉列表
+    layui.use('element', function(){
+      var element = layui.element;
+    });
+    //数据表格
+    layui.use(['table','layer','form'], function(){
+      var table = layui.table;
+      var layer=layui.layer;
+      var form=layui.form;
+      var $=layui.$;
+      var url=$("#ctx").val();
+
+      table.render({
+        elem: '#demo'
+        ,url:'${pageContext.request.contextPath}/BookAction.action?methodName=list'
+        ,method:'post'
+        ,page:true
+        ,cols: [[
+          {type:'checkbox',fixed:'left'}
+          ,{field:'bid', title: 'ID'}
+          ,{field:'bname', title: '书名'}
+          ,{field:'price', title: '价格'}
+          ,{field:'right', title: '操作', width:250,toolbar:"#barDemo"}
+        ]]
+      });
+
+      $("#add").click(function(){
+        layer.open({
+          type: 1,
+          title:"新增",
+          area:['50%','50%'],
+          btn: ['确定', '取消'],
+          content: $("#window"),
+          yes:function(index,layero){
+            $.getJSON(url+'/BookAction.action?methodName=addBook',{
+              bid: $('#bid').val(),
+              bname: $('#bname').val(),
+              price: $('#price').val()
+
+            },function(data){
+
+              //根据后台返回的参数，来进行判断
+              if(data>0){
+                layer.alert('增加成功',{icon:1,title:'提示'},function(i){
+                  layer.close(i);
+                  layer.close(index);//关闭弹出层
+                  $("#book")[0].reset()//重置form
+                })
+                table.reload('demo',{//重载表格
+                  page:{
+                    curr:1
+                  }
+                })
+              }
+            });
+          }
+        });
+      })
+
+
+      //获取按钮
+      table.on('tool(test)', function(obj){
+        var data = obj.data; //获得当前行数据
+        var tr=obj.tr//活动当前行tr 的  DOM对象
+        if(obj.event === 'del'){ //删除
+          layer.confirm('确定删除吗？',{title:'删除'}, function(index){
+            //向服务端发送删除指令og
+            $.getJSON(url+'/BookAction.action?methodName=del',{bid:data.bid}, function(ret){
+              layer.close(index);//关闭弹窗
+              table.reload('demo', {//重载表格
+                page: {
+                  curr: 1
+                  // 重新从第 1 页开始
+                }
+              })
+            });
+            layer.close(index);
+          });
+        } else if(obj.event === 'edit'){ //编辑
+          layer.open({
+            type: 1 //Page层类型
+            ,skin: 'layui-layer-molv'
+            ,area: ['380px', '270px']
+            ,title: ['编辑书本信息','font-size:18px']
+            ,btn: ['确定', '取消']
+            ,shadeClose: true
+            ,shade: 0 //遮罩透明度
+            ,maxmin: true //允许全屏最小化
+            ,content:$("#window")  //弹窗路径
+            ,success:function(layero,index){
+              $('#bid').val(data.bid);
+              $('#bname').val(data.bname);
+              $('#price').val(data.price);
+            },yes:function(index,layero){
+              $.getJSON(url+'/BookAction.action?methodName=edit',{
+                bid: data.bid,
+                bid: $('#bid').val(),
+                bname: $('#bname').val(),
+                price: $('#price').val()
+              },function(data){
+                //根据后台返回的参数，来进行判断
+                if(data>0){
+                  layer.alert('编辑成功',{icon:1,title:'提示'},function(i){
+                    layer.close(i);
+                    layer.close(index);//关闭弹出层
+                    $("#book")[0].reset()//重置form
+                  })
+                  table.reload('demo',{//重载表格
+                    page:{
+                      curr:1
+                    }
+                  })
+                }
+              });
+            }
+          });
+        }
+      });
+    })
+
+  </script>
+
+
+  <title>layui</title>
+</head>
+
+<body class="layui-layout-body">
+
+
+<div class="site-text" style="margin: 5%; display: none" id="window"  target="test123">
+  <form class="layui-form" id="book" method="post" lay-filter="example">
+    <div class="layui-form-item">
+      <label class="layui-form-label">书本编号</label>
+      <div class="layui-input-block">
+        <input type="text" id="bid" name="bid" lay-verify="title" autocomplete="off" placeholder="请输入编号" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">书本名称</label>
+      <div class="layui-input-block">
+        <input type="text" id="bname" name="bname" lay-verify="title" autocomplete="off" placeholder="请输入名称" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">书本价格</label>
+      <div class="layui-input-block">
+        <input type="text" id="price" name="price" lay-verify="title" autocomplete="off" placeholder="请输入价格" class="layui-input">
+      </div>
+    </div>
+
+
+    <!--  <div class="layui-form-item">
+       <div class="layui-input-block">
+         <button class="layui-btn" lay-submit="" lay-filter="demo1">立即提交</button>
+       </div>
+     </div> -->
+  </form>
+</div>
+
+
+<input type="hidden" id="ctx" value="${pageContext.request.contextPath }" />
+<div class="layui-layout layui-layout-admin">
+  <div class="layui-header">
+    <div class="layui-logo">阳某的后台</div>
+    <!-- 头部区域（可配合layui已有的水平导航） -->
+    <ul class="layui-nav layui-layout-left">
+      <li class="layui-nav-item"><a href="">控制台</a></li>
+      <li class="layui-nav-item"><a href="">商品管理</a></li>
+      <li class="layui-nav-item"><a href="">用户</a></li>
+      <li class="layui-nav-item">
+        <a href="javascript:;">其它系统</a>
+        <dl class="layui-nav-child">
+          <dd><a href="">邮件管理</a></dd>
+          <dd><a href="">消息管理</a></dd>
+          <dd><a href="">授权管理</a></dd>
+        </dl>
+      </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <img src="http://t.cn/RCzsdCq" class="layui-nav-img">
+          阳某
+        </a>
+        <dl class="layui-nav-child">
+          <dd><a href="">基本资料</a></dd>
+          <dd><a href="">安全设置</a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item"><a href="">退了</a></li>
+    </ul>
+  </div>
+
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree"  lay-filter="test">
+        <li class="layui-nav-item layui-nav-itemed">
+          <a class="" href="javascript:;">所有商品</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;">列表一</a></dd>
+            <dd><a href="javascript:;">列表二</a></dd>
+            <dd><a href="javascript:;">列表三</a></dd>
+            <dd><a href="">超链接</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">解决方案</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;">列表一</a></dd>
+            <dd><a href="javascript:;">列表二</a></dd>
+            <dd><a href="">超链接</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item"><a href="">云市场</a></li>
+        <li class="layui-nav-item"><a href="">发布商品</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;">
+      <div class="layui-inline">
+        书名：
+        <div class="layui-inline">
+          <input class="layui-input" name="s_title" autocomplete="off" />
+        </div>
+        <button class="layui-btn" lay-submit="" lay-filter="reload">搜索</button>
+        <button id="add" class="layui-btn" lay-submit="" lay-filter="pageSubmit">新增</button>
+      </div>
+      <table id="demo" lay-filter="test"></table>
+      <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-mini" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-mini" lay-event="del">删除</a>
+      </script>
+
+    </div>
+  </div>
+
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->
+    © layui.com - 底部固定区域
+  </div>
+</div>
+</body>
+</html>

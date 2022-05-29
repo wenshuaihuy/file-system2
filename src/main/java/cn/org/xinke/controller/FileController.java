@@ -38,7 +38,6 @@ public class FileController {
 
 
     @Value("${fs.dir}")
-//    @Value("${server.tomcat.basedir}")
     private String fileDir;
 
 
@@ -112,8 +111,10 @@ public class FileController {
     @Login
     @ResponseBody
     @PostMapping("/file/upload")
-    public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos) {
+    public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos,@RequestParam String name,@RequestParam String major) {
         log.debug("fileDir0==" + fileDir);
+        log.debug("name:"+name);
+        log.debug("major:"+major);
 //        if (fileDir != null &&fileDir.contains("file:/")) {
 //            String[] split = fileDir.split(":/");
 //            fileDir = split[1];
