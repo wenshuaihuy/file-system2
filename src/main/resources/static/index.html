@@ -44,13 +44,15 @@
                         class="layui-icon layui-icon-edit"></i>重命名目录
                 </button>
                 <!--                <form class="layui-form" id="selectFile"  method="get" >-->
-                <input id="fileName" type="text" name="fileName" required lay-verify="required" placeholder="请输入文件名称"
+                <br/><input id="fileName" type="text" name="fileName" required lay-verify="required" placeholder="请输入要查找的文件名称"
                        autocomplete="off" class="layui-input">
+                <br/><input id="authorName" type="text" name="authorName" required lay-verify="required" placeholder="请输入要查找的作者姓名"
+                                                       autocomplete="off" class="layui-input">
+                <span style="color:red">*</span><input id="majorName" type="text" name="majorName" required lay-verify="required" placeholder="请输入要查找的专业名称"
+                                                       autocomplete="off" class="layui-input">
                 <button id="bthSelectFile" class="layui-btn layui-btn-sm layui-btn-normal icon-btn" lay-submit
                         lay-filter="formDemo"><i class="layui-icon layui-icon-search"></i>查找文件
                 </button>
-                <!--                    action="/api/selectFileByName"-->
-                <!--                </form>-->
             </div>
 
             <div class="file-list"></div>
@@ -237,7 +239,10 @@
         // 刷新
         $('#btnRefresh').click(function () {
             renderList();
-            document.getElementById('fileName').value = null
+            $('#fileName').val('')
+            $('#authorName').val('')
+            $('#majorName').val('')
+
 
         });
         //查找文件
@@ -252,9 +257,24 @@
             // }
             // layer.load(2);
             var fileName = $("#fileName").val();
-            console.log(fileName)
-            $.get(baseServer + 'api/selectFileByName', {
-                fileName: fileName
+            var authorName = $("#authorName").val();
+            var majorName = $("#majorName").val();
+            console.log("fileName:" + fileName)
+            console.log("authorName:" + authorName)
+            console.log("majorName:" + majorName)
+            if (fileName === '' && authorName ==='' && majorName ==='') {
+                layer.open({
+                    type: 1,
+                    title: "提示",
+                    offset: 'auto',
+                    content: "<div style=\"padding: 20px 100px;\"> 请输入要查找的文件必填字段 </div>",
+                    //area: ['20%', '30%'],
+                })
+            }
+            $.get(baseServer + 'api/selectFile', {
+                fileName: fileName,
+                authorName: authorName,
+                majorName: majorName
             }, function (res) {
                 console.log("res: " + res);
                 layer.closeAll('loading');
@@ -330,13 +350,9 @@
                         })
                     }
                 },
-                取消: function (index, layero) {
-                    console.log("bth211")
-                },
                 cancel: function () {
                     console.log("cancel11")
                 },
-
                 choose: function (obj) {
                     console.log("choose")
                     obj.preview(function (index, file, result) {

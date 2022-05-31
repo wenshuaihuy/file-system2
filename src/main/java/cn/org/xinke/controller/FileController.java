@@ -2,13 +2,18 @@ package cn.org.xinke.controller;
 
 import cn.org.xinke.annotation.Login;
 import cn.org.xinke.constant.FileTypeEnum;
+import cn.org.xinke.entity.FileItem;
 import cn.org.xinke.entity.User;
+import cn.org.xinke.service.FileItemService;
 import cn.org.xinke.util.CacheUtil;
 import cn.org.xinke.util.FileTypeUtil;
 import cn.org.xinke.util.GetAllFile;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -36,11 +41,8 @@ public class FileController {
 
     private static final String SLASH = "/";
 
-
     @Value("${fs.dir}")
     private String fileDir;
-
-
 //    String fileDir = this.getClass().getResource("/static").getPath() + "/upload";
 
     @Value("${fs.uuidName}")
@@ -63,6 +65,9 @@ public class FileController {
 
     @Value("${domain}")
     private String domain;
+
+    @Autowired
+    private FileItemService fileItemService;
 
     /**
      * 登录页
@@ -111,10 +116,10 @@ public class FileController {
     @Login
     @ResponseBody
     @PostMapping("/file/upload")
-    public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos,@RequestParam String name,@RequestParam String major) {
+    public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos, @RequestParam String name, @RequestParam String major) {
         log.debug("fileDir0==" + fileDir);
-        log.debug("name:"+name);
-        log.debug("major:"+major);
+        log.debug("name:" + name);
+        log.debug("major:" + major);
 //        if (fileDir != null &&fileDir.contains("file:/")) {
 //            String[] split = fileDir.split(":/");
 //            fileDir = split[1];
@@ -127,7 +132,6 @@ public class FileController {
         if (os.contains("Mac OS")) {
             fileDir = "/Users/Shared/fileSystem/";
         }
-
         curPos = curPos.substring(1) + SLASH;
         log.debug("fileDir1==" + fileDir);
         log.debug("SLASH==" + SLASH);
@@ -138,10 +142,6 @@ public class FileController {
             fileDir += SLASH;
         }
         log.debug("fileDir2==" + fileDir);
-//        File file1 = new File(fileDir);
-//        if (!file1.exists()) {
-//            file1.mkdirs();
-//        }
 
         // 文件原始名称
         String originalFileName = file.getOriginalFilename();
@@ -153,13 +153,7 @@ public class FileController {
         if (uuidName != null && uuidName) {
             path = curPos + UUID.randomUUID().toString().replaceAll("-", "") + "." + suffix;
             outFile = new File(fileDir + path);
-//            if (!outFile.exists()){
-//                try {
-//                    outFile.createNewFile();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+
             log.debug("fileDir3==" + fileDir);
             log.debug("path==" + path);
         } else {
@@ -187,6 +181,18 @@ public class FileController {
                 outFile.getParentFile().mkdirs();
             }
             file.transferTo(outFile);
+            FileItem fileItem = new FileItem();
+            fileItem.setId(UUID.randomUUID().toString().replaceAll("-", ""));
+            fileItem.setAuthorName(name);
+            fileItem.setFileName(originalFileName);
+            fileItem.setMajorName(major);
+            fileItem.setFileType(file.getContentType());
+            fileItem.setFileSize(String.valueOf(file.getSize()));
+            Date date = new Date();
+            String uploadFileTime = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss").format(date);
+            log.debug("upload-file time:" + uploadFileTime);
+            fileItem.setTime(uploadFileTime);
+            fileItemService.save(fileItem);
             Map rs = getRS(200, "上传成功", path);
             //生成缩略图
             if (useSm != null && useSm) {
@@ -283,12 +289,15 @@ public class FileController {
      */
     @Login
     @ResponseBody
-    @RequestMapping("/api/selectFileByName")
-    public Map selectFileByName(String fileName, HttpServletResponse response) {
+    @RequestMapping("/api/selectFile")
+    public Map selectFile(String fileName, String authorName, String majorName, HttpServletResponse response) {
         ArrayList<String> list = new ArrayList<>();
         ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir, list);
         Map<String, Object> hashMap = new HashMap<>();
         List<Map<String, Object>> dataList = new ArrayList<>();
+
+
+
 
         for (String s : allFileName) {
             File file = new File(s);
@@ -342,55 +351,45 @@ public class FileController {
                 }
                 dataList.add(m);
 
-            } else if (name.contains(fileName) && !file.isDirectory()) {
-                log.info("isFile = " + fileName);
-                log.info("isFile = " + s);
-                File f = new File(s);
-                Map<String, Object> m = new HashMap<>(0);
-                // 文件名称
-                m.put("name", f.getName());
-                // 修改时间
-                m.put("updateTime", f.lastModified());
-                // 是否是目录
-                m.put("isDir", f.isDirectory());
-                if (f.isDirectory()) {
-                    // 文件类型
-                    m.put("type", "dir");
+            } else if (!file.isDirectory()) {
+                if (majorName != "" && authorName == "" && fileName == "") {
+                    QueryWrapper<FileItem> selectFileByMajorName = new QueryWrapper<FileItem>();
+                    selectFileByMajorName.like("major_name", majorName);
+                    List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorName);
+                    for (FileItem fileItem : fileItems) {
+                         dataList.add(findFile(s, fileItem.getFileName()));
+                    }
+                } else if (authorName != "" && majorName == "" && fileName == "") {
+                    QueryWrapper<FileItem> selectFileByAuthorName = new QueryWrapper<FileItem>();
+                    selectFileByAuthorName.eq("author_name", authorName);
+                } else if (authorName == "" && majorName == "" && fileName != "") {
+                    dataList.add(findFile(s, fileName));
+                    /*QueryWrapper<FileItem> selectFileByFileName = new QueryWrapper<FileItem>();
+                    selectFileByFileName.like("file_name", fileName);
+                    List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByFileName);
+                    for (FileItem fileItem : fileItems) {
+                        dataList.add(findFile(s, fileItem.getFileName()));
+                    }*/
+                } else if (authorName == "" && majorName != "" && fileName != "") {
+                    QueryWrapper<FileItem> selectFileByMajorNameAndFileName = new QueryWrapper<>();
+                    selectFileByMajorNameAndFileName.eq("major_name", majorName)
+                            .eq("file_name", fileName);
+                } else if (authorName != "" && majorName == "" && fileName != "") {
+                    QueryWrapper<FileItem> selectFileByAuthorNameAndFileName = new QueryWrapper<>();
+                    selectFileByAuthorNameAndFileName.eq("author_name", authorName)
+                            .eq("file_name", fileName);
+                } else if (authorName != "" && majorName != "" && fileName == "") {
+                    QueryWrapper<FileItem> selectFileByAuthorNameAndmajorName = new QueryWrapper<>();
+                    selectFileByAuthorNameAndmajorName.eq("author_name", authorName)
+                            .eq("major_name", majorName);
                 } else {
-                    // 是否支持在线查看
-                    boolean flag = false;
-                    try {
-                        if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
-                            flag = true;
-                        }
-                        m.put("preview", flag);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    String type;
-                    // 文件地址
-                    m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
-                    // 获取文件类型
-                    String contentType = null;
-                    String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
-                    try {
-                        contentType = new Tika().detect(f);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    // 获取文件图标
-                    m.put("type", getFileType(suffix, contentType));
-                    // 是否有缩略图
-                    String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
-                    if (new File(fileDir + smUrl).exists()) {
-                        m.put("hasSm", true);
-                        // 缩略图地址
-                        m.put("smUrl", smUrl);
-                    }
+                    QueryWrapper<FileItem> selectFile = new QueryWrapper<>();
+                    selectFile.eq("authorName", authorName)
+                            .eq("majorName", majorName)
+                            .eq("fileName", fileName);
                 }
-                dataList.add(m);
             }
+
         }
         hashMap.put("code", 200);
         hashMap.put("msg", "查询成功");
@@ -598,6 +597,13 @@ public class FileController {
         log.info("dir:" + dir);
         log.info("accept:" + accept);
         log.info("exts:" + accept);
+
+        String os = System.getProperty("os.name");
+        log.debug("os.name：" + os);
+        boolean mac_os = os.contains("Mac OS");
+        if (os.contains("Mac OS")) {
+            fileDir = "/Users/Shared/fileSystem/";
+        }
 
         String[] mExts = null;
         if (exts != null && !exts.trim().isEmpty()) {
@@ -966,6 +972,61 @@ public class FileController {
         modelMap.put("exists", false);
         modelMap.put("msg", "分享不存在或已经失效~");
         return "share";
+    }
+
+
+    public Map findFile(String allFileName, String fileName) {
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        Map<String, Object> m = new HashMap<>(0);
+        if (allFileName.contains(fileName)) {
+            log.info("isFile = " + fileName);
+            log.info("isFile = " + fileName);
+            File f = new File(allFileName);
+            //Map<String, Object> m = new HashMap<>(0);
+            // 文件名称
+            m.put("name", f.getName());
+            // 修改时间
+            m.put("updateTime", f.lastModified());
+            // 是否是目录
+            m.put("isDir", f.isDirectory());
+            if (f.isDirectory()) {
+                // 文件类型
+                m.put("type", "dir");
+            } else {
+                // 是否支持在线查看
+                boolean flag = false;
+                try {
+                    if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
+                        flag = true;
+                    }
+                    m.put("preview", flag);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                String type;
+                // 文件地址
+                m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
+                // 获取文件类型
+                String contentType = null;
+                String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
+                try {
+                    contentType = new Tika().detect(f);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                // 获取文件图标
+                m.put("type", getFileType(suffix, contentType));
+                // 是否有缩略图
+                String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
+                if (new File(fileDir + smUrl).exists()) {
+                    m.put("hasSm", true);
+                    // 缩略图地址
+                    m.put("smUrl", smUrl);
+                }
+            }
+        }
+        return m;
     }
 
 }
