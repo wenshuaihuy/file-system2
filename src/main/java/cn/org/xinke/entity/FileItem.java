@@ -20,5 +20,6 @@ public class FileItem {
     private String majorName;
     private String fileType;
     private String fileSize;
+    private String filePath;
     private String time;
 }

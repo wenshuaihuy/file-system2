@@ -188,6 +188,7 @@ public class FileController {
             fileItem.setMajorName(major);
             fileItem.setFileType(file.getContentType());
             fileItem.setFileSize(String.valueOf(file.getSize()));
+            fileItem.setFilePath(outFile.getPath());
             Date date = new Date();
             String uploadFileTime = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss").format(date);
             log.debug("upload-file time:" + uploadFileTime);
@@ -292,105 +293,75 @@ public class FileController {
     @RequestMapping("/api/selectFile")
     public Map selectFile(String fileName, String authorName, String majorName, HttpServletResponse response) {
         ArrayList<String> list = new ArrayList<>();
-        ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir, list);
+//        ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir, list);
         Map<String, Object> hashMap = new HashMap<>();
         List<Map<String, Object>> dataList = new ArrayList<>();
 
 
+        if (!"".equals(majorName) && "".equals(authorName) && "".equals(fileName)) {
+            QueryWrapper<FileItem> selectFileByMajorName = new QueryWrapper<FileItem>();
+            selectFileByMajorName.like("major_name", majorName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorName);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
+        } else if (!"".equals(authorName) && "".equals(majorName) && "".equals(fileName)) {
+            QueryWrapper<FileItem> selectFileByAuthorName = new QueryWrapper<FileItem>();
+            selectFileByAuthorName.eq("author_name", authorName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorName);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
+        } else if ("".equals(authorName) && "".equals(majorName) && !"".equals(fileName)) {
 
 
-        for (String s : allFileName) {
-            File file = new File(s);
-            String name = file.getName();
-            log.info("filename==" + name);
-            if (name.contains(fileName) && file.isDirectory()) {
-                log.info("isDirectory = " + fileName);
-                log.info("isDirectory = " + s);
-                File f = new File(s);
-                Map<String, Object> m = new HashMap<>(0);
-                // 文件名称
-                m.put("name", f.getName());
-                // 修改时间
-                m.put("updateTime", f.lastModified());
-                // 是否是目录
-                m.put("isDir", f.isDirectory());
-                if (f.isDirectory()) {
-                    // 文件类型
-                    m.put("type", "dir");
+            QueryWrapper<FileItem> selectFileByFileName = new QueryWrapper<FileItem>();
+            selectFileByFileName.like("file_name", fileName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByFileName);
+            for (FileItem fileItem : fileItems) {
+                boolean directory = new File(fileItem.getFilePath()).isDirectory();
+                if (directory) {
+                    dataList.add(findDirWithFileName(fileItem.getFileName()));
                 } else {
-                    // 是否支持在线查看
-                    boolean flag = false;
-                    try {
-                        if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
-                            flag = true;
-                        }
-                        m.put("preview", flag);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    String type;
-                    // 文件地址
-                    m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
-                    // 获取文件类型
-                    String contentType = null;
-                    String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
-                    try {
-                        contentType = new Tika().detect(f);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    // 获取文件图标
-                    m.put("type", getFileType(suffix, contentType));
-                    // 是否有缩略图
-                    String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
-                    if (new File(fileDir + smUrl).exists()) {
-                        m.put("hasSm", true);
-                        // 缩略图地址
-                        m.put("smUrl", smUrl);
-                    }
-                }
-                dataList.add(m);
-
-            } else if (!file.isDirectory()) {
-                if (majorName != "" && authorName == "" && fileName == "") {
-                    QueryWrapper<FileItem> selectFileByMajorName = new QueryWrapper<FileItem>();
-                    selectFileByMajorName.like("major_name", majorName);
-                    List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorName);
-                    for (FileItem fileItem : fileItems) {
-                         dataList.add(findFile(s, fileItem.getFileName()));
-                    }
-                } else if (authorName != "" && majorName == "" && fileName == "") {
-                    QueryWrapper<FileItem> selectFileByAuthorName = new QueryWrapper<FileItem>();
-                    selectFileByAuthorName.eq("author_name", authorName);
-                } else if (authorName == "" && majorName == "" && fileName != "") {
-                    dataList.add(findFile(s, fileName));
-                    /*QueryWrapper<FileItem> selectFileByFileName = new QueryWrapper<FileItem>();
-                    selectFileByFileName.like("file_name", fileName);
-                    List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByFileName);
-                    for (FileItem fileItem : fileItems) {
-                        dataList.add(findFile(s, fileItem.getFileName()));
-                    }*/
-                } else if (authorName == "" && majorName != "" && fileName != "") {
-                    QueryWrapper<FileItem> selectFileByMajorNameAndFileName = new QueryWrapper<>();
-                    selectFileByMajorNameAndFileName.eq("major_name", majorName)
-                            .eq("file_name", fileName);
-                } else if (authorName != "" && majorName == "" && fileName != "") {
-                    QueryWrapper<FileItem> selectFileByAuthorNameAndFileName = new QueryWrapper<>();
-                    selectFileByAuthorNameAndFileName.eq("author_name", authorName)
-                            .eq("file_name", fileName);
-                } else if (authorName != "" && majorName != "" && fileName == "") {
-                    QueryWrapper<FileItem> selectFileByAuthorNameAndmajorName = new QueryWrapper<>();
-                    selectFileByAuthorNameAndmajorName.eq("author_name", authorName)
-                            .eq("major_name", majorName);
-                } else {
-                    QueryWrapper<FileItem> selectFile = new QueryWrapper<>();
-                    selectFile.eq("authorName", authorName)
-                            .eq("majorName", majorName)
-                            .eq("fileName", fileName);
+                    dataList.add(findFileWithFileName(fileItem.getFileName()));
                 }
             }
-
+        } else if ("".equals(authorName) && !"".equals(majorName) && !"".equals(fileName)) {
+            QueryWrapper<FileItem> selectFileByMajorNameAndFileName = new QueryWrapper<>();
+            selectFileByMajorNameAndFileName.eq("major_name", majorName)
+                    .eq("file_name", fileName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorNameAndFileName);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
+        } else if (!"".equals(authorName) && "".equals(majorName) && !"".equals(fileName)) {
+            QueryWrapper<FileItem> selectFileByAuthorNameAndFileName = new QueryWrapper<>();
+            selectFileByAuthorNameAndFileName.eq("author_name", authorName)
+                    .eq("file_name", fileName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndFileName);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
+        } else if (!"".equals(authorName) && !"".equals(majorName) && "".equals(fileName)) {
+            QueryWrapper<FileItem> selectFileByAuthorNameAndmajorName = new QueryWrapper<>();
+            selectFileByAuthorNameAndmajorName.eq("author_name", authorName)
+                    .eq("major_name", majorName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndmajorName);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
+        } else {
+            QueryWrapper<FileItem> selectFile = new QueryWrapper<>();
+            selectFile.eq("authorName", authorName)
+                    .eq("majorName", majorName)
+                    .eq("fileName", fileName);
+            List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFile);
+            for (FileItem fileItem : fileItems) {
+                dataList.add(findFileWithFileName(fileItem.getFileName()));
+            }
         }
+
+
         hashMap.put("code", 200);
         hashMap.put("msg", "查询成功");
         hashMap.put("data", dataList);
@@ -756,6 +727,9 @@ public class FileController {
                         if (smF.exists() && smF.isFile()) {
                             smF.delete();
                         }
+                        QueryWrapper<FileItem> wrapper = new QueryWrapper<>();
+                        wrapper.eq("file_name", file);
+                        fileItemService.getBaseMapper().delete(wrapper);
                         return getRS(200, "文件删除成功");
                     }
                 } else {
@@ -799,6 +773,14 @@ public class FileController {
                 if (smF.exists()) {
                     smF.renameTo(nsmFile);
                 }
+                QueryWrapper<FileItem> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("file_name", oldFile);
+                FileItem fileItem = fileItemService.getBaseMapper().selectOne(queryWrapper);
+                fileItem.setFileName(newFile);
+                QueryWrapper<FileItem> upDataFileName = new QueryWrapper<>();
+                upDataFileName.eq("file_name", oldFile);
+
+                fileItemService.getBaseMapper().update(fileItem, upDataFileName);
                 return getRS(200, "重命名成功", SLASH + newFile);
             }
         }
@@ -867,6 +849,14 @@ public class FileController {
                 return getRS(500, "目录已存在");
             }
             if (!f.exists() && f.mkdir()) {
+                FileItem fileItem = new FileItem();
+                fileItem.setFileName(dirName);
+                fileItem.setFilePath(fileDir);
+                Date date = new Date();
+                String uploadFileTime = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss").format(date);
+                log.debug("upload-dir time:" + uploadFileTime);
+                fileItem.setTime(uploadFileTime);
+                fileItemService.save(fileItem);
                 return getRS(200, "创建成功");
             }
         }
@@ -1025,7 +1015,124 @@ public class FileController {
                     m.put("smUrl", smUrl);
                 }
             }
+            return m;
         }
+        return null;
+
+    }
+
+
+    public Map findFileWithFileName(String fileName) {
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        Map<String, Object> m = new HashMap<>(0);
+
+        log.info("isFile = " + fileName);
+        log.info("isFile = " + fileName);
+        File f = new File(fileName);
+        //Map<String, Object> m = new HashMap<>(0);
+        // 文件名称
+        m.put("name", f.getName());
+        // 修改时间
+        m.put("updateTime", f.lastModified());
+        // 是否是目录
+        m.put("isDir", f.isDirectory());
+        if (f.isDirectory()) {
+            // 文件类型
+            m.put("type", "dir");
+        } else {
+            // 是否支持在线查看
+            boolean flag = false;
+            try {
+                if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
+                    flag = true;
+                }
+                m.put("preview", flag);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            String type;
+            // 文件地址
+            m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
+            // 获取文件类型
+            String contentType = null;
+            String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
+            try {
+                contentType = new Tika().detect(f);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // 获取文件图标
+            m.put("type", getFileType(suffix, contentType));
+            // 是否有缩略图
+            String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
+            if (new File(fileDir + smUrl).exists()) {
+                m.put("hasSm", true);
+                // 缩略图地址
+                m.put("smUrl", smUrl);
+            }
+        }
+        return m;
+    }
+
+    public Map findDirWithFileName(String fileName) {
+        ArrayList<String> list = new ArrayList<>();
+        ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir, list);
+        Map<String, Object> m = new HashMap<>(0);
+//        File file = new File(fileName);
+//        String name = file.getName();
+        log.info("filename==" + fileName);
+        for (String sFileName : allFileName) {
+            if (sFileName.contains(fileName)) {
+                log.info("isDirectory = " + fileName);
+                log.info("isDirectory = " + fileName);
+                File f = new File(sFileName);
+                //Map<String, Object> m = new HashMap<>(0);
+                // 文件名称
+                m.put("name", f.getName());
+                // 修改时间
+                m.put("updateTime", f.lastModified());
+                // 是否是目录
+                m.put("isDir", f.isDirectory());
+                if (f.isDirectory()) {
+                    // 文件类型
+                    m.put("type", "dir");
+                } else {
+                    // 是否支持在线查看
+                    boolean flag = false;
+                    try {
+                        if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
+                            flag = true;
+                        }
+                        m.put("preview", flag);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String type;
+                    // 文件地址
+                    m.put("url", ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName());
+                    // 获取文件类型
+                    String contentType = null;
+                    String suffix = f.getName().substring(f.getName().lastIndexOf(".") + 1);
+                    try {
+                        contentType = new Tika().detect(f);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    // 获取文件图标
+                    m.put("type", getFileType(suffix, contentType));
+                    // 是否有缩略图
+                    String smUrl = "sm/" + ("/".isEmpty() ? "/" : ("/" + SLASH)) + f.getName();
+                    if (new File(fileDir + smUrl).exists()) {
+                        m.put("hasSm", true);
+                        // 缩略图地址
+                        m.put("smUrl", smUrl);
+                    }
+                }
+
+            }
+        }
+
         return m;
     }
 
