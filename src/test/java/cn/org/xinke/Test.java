@@ -53,4 +53,11 @@ public class Test {
         System.out.println(dateFormat.format(date));
     }
 
+    @org.junit.Test
+    public void tets3() throws IOException {
+        String s = "123456";
+        System.out.println(s.substring(1));
+
+    }
+
 }

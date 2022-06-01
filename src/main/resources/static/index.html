@@ -169,6 +169,7 @@
                 dir = $('#tvFP').text();
             }
             layer.load(2);
+            console.log("dir",$('#tvFP').text())
             $.get(baseServer + 'api/list', {
                 dir: dir
             }, function (res) {
@@ -245,8 +246,8 @@
 
 
         });
-        //查找文件
 
+        //查找文件
         $('#bthSelectFile').click(function () {
             // if ($('#tvFP').text() == '/') {
             //     $('#btnDelDir').hide();
@@ -270,13 +271,16 @@
                     content: "<div style=\"padding: 20px 100px;\"> 请输入要查找的文件必填字段 </div>",
                     //area: ['20%', '30%'],
                 })
+                renderList();
             }
             $.get(baseServer + 'api/selectFile', {
+                dir: $('#tvFP').text(),
                 fileName: fileName,
                 authorName: authorName,
                 majorName: majorName
             }, function (res) {
                 console.log("res: " + res);
+                console.log("dir: " + $('#tvFP').text());
                 layer.closeAll('loading');
                 if (res.code == 200) {
                     for (var i = 0; i < res.data.length; i++) {
@@ -289,6 +293,9 @@
                         // $('.file-list').html(html);
                         $('.file-list').html(html);
                     });
+                    $('#fileName').val('')
+                    $('#authorName').val('')
+                    $('#majorName').val('')
                 } else {
                     layer.msg(res.msg, {icon: 2});
                 }
@@ -377,7 +384,18 @@
                 var cDir = $('#tvFP').text();
                 cDir += (cDir == '/' ? name : ('/' + name));
                 $('#tvFP').text(cDir);
-                renderList(cDir);
+                console.log("文件夹点击事件cDir: "+cDir)
+                console.log("文件夹点击事件 mUrl: "+mUrl)
+                console.log("文件夹点击事件 mUrl.substring(6): "+mUrl.substring(6))
+                if (mUrl.indexOf("undefined")!==-1) {
+                    renderList(cDir);
+                } else {
+                    renderList(mUrl.substring(6));
+                }
+
+
+
+
             } else {
                 var $target = $(this).find('.file-list-img');
                 $('#dropdownFile').css({
