@@ -304,7 +304,7 @@ public class FileController {
             }
         } else if (!"".equals(authorName) && "".equals(majorName) && "".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorName = new QueryWrapper<FileItem>();
-            selectFileByAuthorName.eq("author_name", authorName);
+            selectFileByAuthorName.like("author_name", authorName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorName);
             for (FileItem fileItem : fileItems) {
                 dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
@@ -323,33 +323,33 @@ public class FileController {
             }
         } else if ("".equals(authorName) && !"".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByMajorNameAndFileName = new QueryWrapper<>();
-            selectFileByMajorNameAndFileName.eq("major_name", majorName)
-                    .eq("file_name", fileName);
+            selectFileByMajorNameAndFileName.like("major_name", majorName)
+                    .like("file_name", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorNameAndFileName);
             for (FileItem fileItem : fileItems) {
                 dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && "".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorNameAndFileName = new QueryWrapper<>();
-            selectFileByAuthorNameAndFileName.eq("author_name", authorName)
-                    .eq("file_name", fileName);
+            selectFileByAuthorNameAndFileName.like("author_name", authorName)
+                    .like("file_name", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndFileName);
             for (FileItem fileItem : fileItems) {
                 dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && !"".equals(majorName) && "".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorNameAndmajorName = new QueryWrapper<>();
-            selectFileByAuthorNameAndmajorName.eq("author_name", authorName)
-                    .eq("major_name", majorName);
+            selectFileByAuthorNameAndmajorName.like("author_name", authorName)
+                    .like("major_name", majorName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndmajorName);
             for (FileItem fileItem : fileItems) {
                 dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && !"".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFile = new QueryWrapper<>();
-            selectFile.eq("authorName", authorName)
-                    .eq("majorName", majorName)
-                    .eq("fileName", fileName);
+            selectFile.like("author_name", authorName)
+                    .like("major_name", majorName)
+                    .like("file_name", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFile);
             for (FileItem fileItem : fileItems) {
                 dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
@@ -966,10 +966,10 @@ public class FileController {
     public Map findFileWithFileName(String fileName, String filePath) {
         List<Map<String, Object>> dataList = new ArrayList<>();
         Map<String, Object> m = new HashMap<>(0);
-        log.info("isFile = " + fileName);
-        log.info("isFile = " + fileName);
+        log.info("fileName = " + fileName);
+        log.info("filePath = " + filePath);
 
-        File f = new File(fileName);
+        File f = new File(filePath);
         //Map<String, Object> m = new HashMap<>(0);
         // 文件名称
         m.put("name", f.getName());
@@ -984,7 +984,8 @@ public class FileController {
             // 是否支持在线查看
             boolean flag = false;
             try {
-                if (FileTypeUtil.canOnlinePreview(new Tika().detect(f))) {
+                String detect = new Tika().detect(f);
+                if (FileTypeUtil.canOnlinePreview(detect)) {
                     flag = true;
                 }
                 m.put("preview", flag);
