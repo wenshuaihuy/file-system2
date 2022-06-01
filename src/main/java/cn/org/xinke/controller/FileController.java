@@ -300,14 +300,14 @@ public class FileController {
             selectFileByMajorName.like("major_name", majorName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorName);
             for (FileItem fileItem : fileItems) {
-            //    dataList.add(findFileWithFileName(fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && "".equals(majorName) && "".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorName = new QueryWrapper<FileItem>();
             selectFileByAuthorName.eq("author_name", authorName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorName);
             for (FileItem fileItem : fileItems) {
-             //   dataList.add(findFileWithFileName(fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if ("".equals(authorName) && "".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByFileName = new QueryWrapper<FileItem>();
@@ -316,9 +316,9 @@ public class FileController {
             for (FileItem fileItem : fileItems) {
                 boolean directory = new File(fileItem.getFilePath()).isDirectory();
                 if (directory) {
-                    dataList.add(findDirWithFileName(fileItem.getFileName(),fileItem.getFilePath()));
+                    dataList.add(findDirWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
                 } else {
-                    dataList.add(findFileWithFileName(fileItem.getFileName(),fileItem.getFilePath()));
+                    dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
                 }
             }
         } else if ("".equals(authorName) && !"".equals(majorName) && !"".equals(fileName)) {
@@ -327,7 +327,7 @@ public class FileController {
                     .eq("file_name", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByMajorNameAndFileName);
             for (FileItem fileItem : fileItems) {
-               // dataList.add(findFileWithFileName(fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && "".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorNameAndFileName = new QueryWrapper<>();
@@ -335,7 +335,7 @@ public class FileController {
                     .eq("file_name", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndFileName);
             for (FileItem fileItem : fileItems) {
-              //  dataList.add(findFileWithFileName(fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && !"".equals(majorName) && "".equals(fileName)) {
             QueryWrapper<FileItem> selectFileByAuthorNameAndmajorName = new QueryWrapper<>();
@@ -343,7 +343,7 @@ public class FileController {
                     .eq("major_name", majorName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFileByAuthorNameAndmajorName);
             for (FileItem fileItem : fileItems) {
-                //dataList.add(findFileWithFileName(fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else if (!"".equals(authorName) && !"".equals(majorName) && !"".equals(fileName)) {
             QueryWrapper<FileItem> selectFile = new QueryWrapper<>();
@@ -352,7 +352,7 @@ public class FileController {
                     .eq("fileName", fileName);
             List<FileItem> fileItems = fileItemService.getBaseMapper().selectList(selectFile);
             for (FileItem fileItem : fileItems) {
-              //  dataList.add(findFileWithFileName(dir,fileItem.getFileName()));
+                dataList.add(findFileWithFileName(fileItem.getFileName(), fileItem.getFilePath()));
             }
         } else {
             log.info("没有查询条件");
@@ -963,7 +963,7 @@ public class FileController {
     }
 
 
-    public Map findFileWithFileName(String fileName,String filePath) {
+    public Map findFileWithFileName(String fileName, String filePath) {
         List<Map<String, Object>> dataList = new ArrayList<>();
         Map<String, Object> m = new HashMap<>(0);
         log.info("isFile = " + fileName);
@@ -1016,7 +1016,7 @@ public class FileController {
         return m;
     }
 
-    public Map findDirWithFileName(String fileName,String filePath) {
+    public Map findDirWithFileName(String fileName, String filePath) {
         ArrayList<String> list = new ArrayList<>();
         ArrayList<String> allFileName = GetAllFile.getAllFileName(fileDir, list);
         Map<String, Object> m = new HashMap<>(0);
