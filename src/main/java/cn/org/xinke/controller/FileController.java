@@ -598,9 +598,24 @@ public class FileController {
                 // 文件名称
                 m.put("name", f.getName());
                 // 修改时间
+                m.put("updateFileTime", getDate());
                 m.put("updateTime", f.lastModified());
                 // 是否是目录
                 m.put("isDir", f.isDirectory());
+                //作者名称
+                QueryWrapper<FileItem> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("file_name", f.getName());
+                FileItem fileItem = fileItemService.getBaseMapper().selectOne(queryWrapper);
+                if (fileItem == null) {
+                    m.put("authorName", "");
+                    //专业名称
+                    m.put("majorName", "");
+                } else {
+                    m.put("authorName", fileItem.getAuthorName());
+                    //专业名称
+                    m.put("majorName", fileItem.getMajorName());
+                }
+
                 if (f.isDirectory()) {
                     // 文件类型
                     m.put("type", "dir");
@@ -974,6 +989,7 @@ public class FileController {
         // 文件名称
         m.put("name", f.getName());
         // 修改时间
+        m.put("updateFileTime", getDate());
         m.put("updateTime", f.lastModified());
         // 是否是目录
         m.put("isDir", f.isDirectory());
@@ -1032,6 +1048,7 @@ public class FileController {
                 // 文件名称
                 m.put("name", f.getName());
                 // 修改时间
+                m.put("updateFileTime", getDate());
                 m.put("updateTime", f.lastModified());
                 // 是否是目录
                 m.put("isDir", f.isDirectory());

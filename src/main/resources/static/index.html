@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -122,7 +122,7 @@
         <li><i class="layui-icon layui-icon-file"></i>&emsp;查看&emsp;</li>
         <li><i class="layui-icon layui-icon-download-circle"></i>&emsp;下载&emsp;</li>
         <li>
-                <i class="layui-icon layui-icon-delete" style="font-size: 19px;"></i>&nbsp;&nbsp;&nbsp;删除&emsp;
+            <i class="layui-icon layui-icon-delete" style="font-size: 19px;"></i>&nbsp;&nbsp;&nbsp;删除&emsp;
         </li>
         <li></i>&emsp;重命名&emsp;</li>
     </ul>
@@ -133,11 +133,12 @@
 <!-- 渲染模板 -->
 <script id="fileTpl" type="text/html">
     {{#  layui.each(d, function(index, item){ }}
-    <div  class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}" data-name="{{item.name}}"
+    <div onmouseover="showFileInfo(this)" class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}"
+         data-name="{{item.name}}"
          data-preview="{{item.preview}}" id="filesListItem">
-        <div class="file-list-img {{item.hasSm?'media':''}}"  >
+        <div class="file-list-img {{item.hasSm?'media':''}}">
             {{# if(item.hasSm){ }}
-            <img src="{{item.smUrl}}" />
+            <img src="{{item.smUrl}}"/>
             {{# }else{ }}
             <img src="assets/images/fti/{{item.type}}.png"/>
             {{# } }}
@@ -156,7 +157,7 @@
 <script type="text/javascript" src="assets/layui/layui.js"></script>
 <script type="text/javascript" src="assets/clipboard.min.js"></script>
 <script type="text/javascript" src="assets/config.js"></script>
-<script>
+<script type="text/javascript">
     layui.use(['jquery', 'layer', 'element', 'upload', 'laytpl', 'util', 'form', 'dropdown'], function () {
         var $ = layui.jquery;
         var layer = layui.layer;
@@ -166,6 +167,11 @@
         var util = layui.util;
         var form = layui.form;
         var dropdown = layui.dropdown;
+
+        var authorName;
+        var majorName;
+        var fileName;
+        var updateFileTime;
 
         // 渲染文件列表
         function renderList(dir) {
@@ -189,6 +195,15 @@
                     for (var i = 0; i < res.data.length; i++) {
                         res.data[i].url = baseServer + 'file/' + res.data[i].url;
                         res.data[i].smUrl = baseServer + 'file/sm?p=' + res.data[i].smUrl;
+
+                        authorName = res.data[i].authorName;
+                        majorName = res.data[i].majorName;
+                        fileName = res.data[i].name;
+                        updateFileTime = res.data[i].updateFileTime;
+                        console.log("authorName：" + authorName)
+                        console.log("majorName：" + majorName)
+                        console.log("fileName：" + fileName)
+                        console.log("updateFileTime：" + updateFileTime)
                     }
                     laytpl(fileTpl.innerHTML).render(res.data, function (html) {
                         $('.file-list').html(html);
@@ -421,7 +436,17 @@
         //     console.log('222');
         //     layer.closeAll('tips');
         // });
-
+        // 显示描述
+        showFileInfo = function (t) {
+            console.log(authorName);
+            // var row = $(t).attr('data-d'); //获取显示内容
+            var row = 'authorName:' + authorName; //获取显示内容
+            //小tips
+            layer.tips(row, t, {
+                tips: [1, '#3595CC'],
+                time: 4000
+            })
+        }
 
         //监听提交
         var mUrl;
@@ -674,6 +699,8 @@
         });
 
     });
+
+
 </script>
 </body>
 </html>
