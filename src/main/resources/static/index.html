@@ -44,11 +44,14 @@
                         class="layui-icon layui-icon-edit"></i>重命名目录
                 </button>
                 <!--                <form class="layui-form" id="selectFile"  method="get" >-->
-                <br/><input id="fileName" type="text" name="fileName" required lay-verify="required" placeholder="请输入要查找的文件名称"
-                       autocomplete="off" class="layui-input">
-                <br/><input id="authorName" type="text" name="authorName" required lay-verify="required" placeholder="请输入要查找的作者姓名"
-                                                       autocomplete="off" class="layui-input">
-                <span style="color:red">*</span><input id="majorName" type="text" name="majorName" required lay-verify="required" placeholder="请输入要查找的专业名称"
+                <br/><input id="fileName" type="text" name="fileName" required lay-verify="required"
+                            placeholder="请输入要查找的文件名称"
+                            autocomplete="off" class="layui-input">
+                <br/><input id="authorName" type="text" name="authorName" required lay-verify="required"
+                            placeholder="请输入要查找的作者姓名"
+                            autocomplete="off" class="layui-input">
+                <span style="color:red">*</span><input id="majorName" type="text" name="majorName" required
+                                                       lay-verify="required" placeholder="请输入要查找的专业名称"
                                                        autocomplete="off" class="layui-input">
                 <button id="bthSelectFile" class="layui-btn layui-btn-sm layui-btn-normal icon-btn" lay-submit
                         lay-filter="formDemo"><i class="layui-icon layui-icon-search"></i>查找文件
@@ -76,6 +79,7 @@
     </ul>
 </div>
 
+<!--上传文件弹出层-->
 <div class="site-text" style="margin: 5%; display: none" id="window">
     <form class="layui-form" id="book" method="post" lay-filter="example">
         <div class="layui-form-item">
@@ -87,10 +91,6 @@
             </div>
         </div>
         <div class="layui-form-item">
-            <!--            <label class="layui-form-label">专业</label>-->
-            <!--            <div class="layui-input-block">-->
-            <!--                <input type="text" id="price" name="price" lay-verify="title" autocomplete="off" placeholder="请输入价格" class="layui-input">-->
-            <!--            </div>-->
             <label class="layui-form-label">专业<span style="color:red">*</span></label>
             <div class="layui-inline">
                 <input name="major" lay-verify="required" readonly placeholder="在选择专业名称" class="layui-input" id="major">
@@ -117,16 +117,27 @@
     </form>
 </div>
 
+<div class="layui-slider-hover" id="fileInfo" hidden>
+    <ul>
+        <li><i class="layui-icon layui-icon-file"></i>&emsp;查看&emsp;</li>
+        <li><i class="layui-icon layui-icon-download-circle"></i>&emsp;下载&emsp;</li>
+        <li>
+                <i class="layui-icon layui-icon-delete" style="font-size: 19px;"></i>&nbsp;&nbsp;&nbsp;删除&emsp;
+        </li>
+        <li></i>&emsp;重命名&emsp;</li>
+    </ul>
+</div>
+
 <input type="hidden" id="shareFileUrl" value="">
 
 <!-- 渲染模板 -->
 <script id="fileTpl" type="text/html">
     {{#  layui.each(d, function(index, item){ }}
-    <div class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}" data-name="{{item.name}}"
-         data-preview="{{item.preview}}">
-        <div class="file-list-img {{item.hasSm?'media':''}}">
+    <div  class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}" data-name="{{item.name}}"
+         data-preview="{{item.preview}}" id="filesListItem">
+        <div class="file-list-img {{item.hasSm?'media':''}}"  >
             {{# if(item.hasSm){ }}
-            <img src="{{item.smUrl}}"/>
+            <img src="{{item.smUrl}}" />
             {{# }else{ }}
             <img src="assets/images/fti/{{item.type}}.png"/>
             {{# } }}
@@ -169,7 +180,7 @@
                 dir = $('#tvFP').text();
             }
             layer.load(2);
-            console.log("dir",$('#tvFP').text())
+            console.log("dir", $('#tvFP').text())
             $.get(baseServer + 'api/list', {
                 dir: dir
             }, function (res) {
@@ -263,7 +274,7 @@
             console.log("fileName:" + fileName)
             console.log("authorName:" + authorName)
             console.log("majorName:" + majorName)
-            if (fileName === '' && authorName ==='' && majorName ==='') {
+            if (fileName === '' && authorName === '' && majorName === '') {
                 layer.open({
                     type: 1,
                     title: "提示",
@@ -344,7 +355,7 @@
                     var preview = $('input[name="preview"]').val();
                     console.log("name：" + name)
                     console.log("major：" + major)
-                    if (name !== '' && major !== '' && preview !=='') {
+                    if (name !== '' && major !== '' && preview !== '') {
                         $("#commit").click();
                         top.layer.close(index);
                     } else {
@@ -369,6 +380,47 @@
                 },
             });
         })
+        // var subtips;
+        // $('#files-list-item').on('hover','.files-list-item', function (e) {
+        //         console.log("xuanting")
+        //         openMsg();
+        //     },
+        //     function () {
+        //         layer.close(subtips);
+        //     }
+        // );
+        //鼠标悬停提示特效
+        // var subtips;
+        // $('#files-list-item').hover(function () {
+        //     console.log("xuanting")
+        //     openMsg();
+        // }, function () {
+        //     layer.close(subtips);
+        // });
+        // function openMsg() {
+        //     subtips = layer.tips('提示信息', 'body', {tips: [1, '#c05800'], time: 3000});
+        // }
+
+        // $('#filesListItem').hover(function () {
+        //     console.log("xuanting")
+        //     // openMsg();
+        //     layer.tips('提示信息', '#filesListItem', { tips: [1, '#c05800'], time: 3000 });
+        // }, function () {
+        //     // layer.closeAll(subtips);
+        //     layer.closeAll('tips');
+        // });
+        $("body").on("mouseenter", ".file-list-item", function () {
+            console.log('111');
+            // layer.tips('提示信息', '#filesListItem', { tips: [1, '#c05800'], time: 3000 });
+            layer.tips('我是另外一个tips，只不过我长得跟之前那位稍有些不一样。', 'filesListItem', {
+                tips: [1, '#3595CC'],
+                time: 4000
+            });
+        });
+        $("body").on("mouseleave", ".file-list-item", function () {
+            console.log('222');
+            layer.closeAll('tips');
+        });
 
 
         //监听提交
@@ -384,20 +436,18 @@
                 var cDir = $('#tvFP').text();
                 cDir += (cDir == '/' ? name : ('/' + name));
                 $('#tvFP').text(cDir);
-                console.log("文件夹点击事件cDir: "+cDir)
-                console.log("文件夹点击事件 mUrl: "+mUrl)
-                console.log("文件夹点击事件 mUrl.substring(6): "+mUrl.substring(6))
-                if (mUrl.indexOf("undefined")!==-1) {
+                console.log("文件夹点击事件cDir: " + cDir)
+                console.log("文件夹点击事件 mUrl: " + mUrl)
+                console.log("文件夹点击事件 mUrl.substring(6): " + mUrl.substring(6))
+                if (mUrl.indexOf("undefined") !== -1) {
                     renderList(cDir);
                 } else {
                     renderList(mUrl.substring(6));
                 }
-
-
-
-
             } else {
+
                 var $target = $(this).find('.file-list-img');
+
                 $('#dropdownFile').css({
                     'top': $target.offset().top + 90,
                     'left': $target.offset().left + 25
