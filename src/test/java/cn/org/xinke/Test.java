@@ -57,7 +57,13 @@ public class Test {
     public void tets3() throws IOException {
         String s = "123456";
         System.out.println(s.substring(1));
+    }
 
+    @org.junit.Test
+    public void tets4() throws IOException {
+        String imgUrl = "http://127.0.0.1:8080/cms/ReadAddress/1479805098158.jpg";
+        String image = imgUrl.substring(imgUrl.lastIndexOf("/")+1);
+        System.out.println(image);
     }
 
 }

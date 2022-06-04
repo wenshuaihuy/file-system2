@@ -603,18 +603,18 @@ public class FileController {
                 // 是否是目录
                 m.put("isDir", f.isDirectory());
                 //作者名称
-                QueryWrapper<FileItem> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("file_name", f.getName());
-                FileItem fileItem = fileItemService.getBaseMapper().selectOne(queryWrapper);
-                if (fileItem == null) {
+//                QueryWrapper<FileItem> queryWrapper = new QueryWrapper<>();
+//                queryWrapper.eq("file_name", f.getName());
+//                FileItem fileItem = fileItemService.getBaseMapper().selectOne(queryWrapper);
+//                if (fileItem == null) {
                     m.put("authorName", "");
                     //专业名称
                     m.put("majorName", "");
-                } else {
-                    m.put("authorName", fileItem.getAuthorName());
-                    //专业名称
-                    m.put("majorName", fileItem.getMajorName());
-                }
+//                } else {
+//                    m.put("authorName", fileItem.getAuthorName());
+//                    //专业名称
+//                    m.put("majorName", fileItem.getMajorName());
+//                }
 
                 if (f.isDirectory()) {
                     // 文件类型
@@ -789,11 +789,13 @@ public class FileController {
                     smF.renameTo(nsmFile);
                 }
                 QueryWrapper<FileItem> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("file_name", oldFile);
+                String oleFileNameString = f.getPath().substring(f.getPath().lastIndexOf("/") + 1);
+                queryWrapper.eq("file_name", oleFileNameString);
                 FileItem fileItem = fileItemService.getBaseMapper().selectOne(queryWrapper);
-                fileItem.setFileName(newFile);
+                fileItem.setFileName(nFile.getPath().substring(nFile.getPath().lastIndexOf("/") + 1));
+                fileItem.setFilePath(nFile.getPath());
                 QueryWrapper<FileItem> upDataFileName = new QueryWrapper<>();
-                upDataFileName.eq("file_name", oldFile);
+                upDataFileName.eq("file_name", oleFileNameString);
 
                 fileItemService.getBaseMapper().update(fileItem, upDataFileName);
                 return getRS(200, "重命名成功", SLASH + newFile);
