@@ -133,9 +133,14 @@
 <!-- 渲染模板 -->
 <script id="fileTpl" type="text/html">
     {{#  layui.each(d, function(index, item){ }}
-    <div onmouseover="showFileInfo(this)" class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}"
+    <div class="file-list-item" data-dir="{{item.isDir}}" data-url="{{item.url}}"
          data-name="{{item.name}}"
-         data-preview="{{item.preview}}" id="filesListItem">
+         data-preview="{{item.preview}}"
+         data-authorName="{{item.authorName}}"
+         data-majorName="{{item.majorName}}"
+         data-updateFileTime="{{item.updateFileTime}}"
+         id="filesListItem">
+
         <div class="file-list-img {{item.hasSm?'media':''}}">
             {{# if(item.hasSm){ }}
             <img src="{{item.smUrl}}"/>
@@ -143,7 +148,14 @@
             <img src="assets/images/fti/{{item.type}}.png"/>
             {{# } }}
         </div>
-        <div class="file-list-name">{{item.name}}</div>
+        <div id="itemName" onmouseover="showFileInfo(this)"
+             data-name="{{item.name}}"
+             data-authorName="{{item.authorName}}"
+             data-majorName="{{item.majorName}}"
+             data-updateFileTime="{{item.updateFileTime}}"
+             class="file-list-name">
+            {{item.name}}
+        </div>
     </div>
     {{#  }); }}
     {{# if(d.length<=0){ }}
@@ -437,26 +449,36 @@
         //     layer.closeAll('tips');
         // });
         // 显示描述
-        // showFileInfo = function (t) {
-        //     console.log(authorName);
-        //     console.log(t.authorName);
-        //     console.log(t.class);
-        //     // var row = $(t).attr('data-d'); //获取显示内容
-        //     var row = 'authorName:' + authorName  +"t:" + t; //获取显示内容
-        //     //小tips
-        //     layer.tips(row, t, {
-        //         tips: [1, '#3595CC'],
-        //         time: 4000
-        //     })
-        // }
+        showFileInfo = function (t) {
+            var itemName = document.getElementById('fileItemName');
+            console.log('itemName:' + itemName.getAttribute('data-name'))
+            console.log('itemName-data-authorName:' + itemName.getAttribute('data-authorName'))
+            console.log('itemName-text:' + itemName.innerText)
+            console.log('itemName-html2:' + t.innerHTML)
+            console.log('itemName-html3:' + t.getAttribute('data-name'))
+            console.log('itemName-html4:' + t.getAttribute('data-authorName'))
+            console.log('itemName-html5:' + t.getAttribute('data-majorName'))
+            console.log('itemName-html6:' + t.getAttribute('data-updateFileTime'))
+
+            console.log("dataName:" + t.innerText);
+            const row = '文件名称:' + t.getAttribute('data-name') + "<br/>"
+            + '作者名称:' + t.getAttribute('data-authorName') + "<br/>"
+            + '专业名称:' + t.getAttribute('data-majorName') + "<br/>"
+            + '上传时间:' + t.getAttribute('data-updateFileTime'); //获取显示内容
+            //小tips
+            layer.tips(row, t, {
+                tips: [1, '#3595CC'],
+                time: 1500
+            })
+        }
 
         //监听提交
         var mUrl;
         // 列表点击事件
         $('body').on('click', '.file-list-item', function (e) {
-            var isDir = $(this).data('dir');
-            var name = $(this).data('name');
-            var preview = $(this).data('preview');
+            const isDir = $(this).data('dir');
+            const name = $(this).data('name');
+            const preview = $(this).data('preview');
             mUrl = $(this).data('url');
             $('#copy').attr('data-clipboard-text', mUrl);
             if (isDir) {
@@ -473,7 +495,7 @@
                 }
             } else {
 
-                var $target = $(this).find('.file-list-img');
+                const $target = $(this).find('.file-list-img');
 
                 $('#dropdownFile').css({
                     'top': $target.offset().top + 90,
@@ -515,13 +537,13 @@
 
         // 查看
         $('#open').click(function () {
-            var fullName = mUrl.substr(7);
+            const fullName = mUrl.substr(7);
             window.open("/file?p=" + fullName + "&d=0", '_blank');
         });
 
         // 下载
         $('#down').click(function () {
-            var fullName = mUrl.substr(7);
+            const fullName = mUrl.substr(7);
             window.open("/file?p=" + fullName + "&d=1", '_blank');
         });
 
@@ -550,8 +572,8 @@
                 value: mUrl.substr(mUrl.lastIndexOf('/') + 1),
                 title: '新文件名'
             }, function (value, index, elem) {
-                var oldFile = mUrl.substring(mUrl.indexOf('/file/') + 6);
-                var newFile = mUrl.substr(7, mUrl.lastIndexOf('/') - 6) + value;
+                const oldFile = mUrl.substring(mUrl.indexOf('/file/') + 6);
+                const newFile = mUrl.substr(7, mUrl.lastIndexOf('/') - 6) + value;
                 layer.load(2);
                 $.get(baseServer + 'api/rename', {
                     oldFile: oldFile,
@@ -576,7 +598,7 @@
                 value: '30',
                 title: '设置时间(分钟)'
             }, function (value, index, elem) {
-                var file = mUrl.substr(7);
+                const file = mUrl.substr(7);
                 layer.load(2);
                 $.post(baseServer + 'api/share', {
                     file: file,
@@ -589,7 +611,7 @@
                             content: '链接：' + res.url,
                             btn: ['复制链接'],
                             btn1: function (index, layero) {
-                                var clipboard = new ClipboardJS(".layui-layer-btn0", {
+                                const clipboard = new ClipboardJS(".layui-layer-btn0", {
                                     text: function () {
                                         return res.url;
                                     }
@@ -636,7 +658,7 @@
                 value: "新建文件夹",
                 title: '文件名'
             }, function (value, index, elem) {
-                var curPos = $('#tvFP').text();
+                const curPos = $('#tvFP').text();
                 layer.load(2);
                 $.get(baseServer + 'api/mkdir', {
                     curPos: curPos,
@@ -657,7 +679,7 @@
         // 删除当前目录
         $('#btnDelDir').click(function () {
             layer.confirm('将删除此目录下所有文件', {icon: 3, title: '确认'}, function (index) {
-                var curPos = $('#tvFP').text().substr(1);
+                const curPos = $('#tvFP').text().substr(1);
                 layer.load(2);
                 $.get(baseServer + 'api/del', {
                     file: curPos
@@ -676,7 +698,7 @@
 
         // 重命名当前目录
         $('#btnRname').click(function () {
-            var tvFP = $('#tvFP').text();
+            const tvFP = $('#tvFP').text();
             layer.prompt({
                 formType: 0,
                 value: tvFP,
