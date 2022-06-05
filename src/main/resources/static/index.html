@@ -451,23 +451,18 @@
         // 显示描述
         showFileInfo = function (t) {
             var itemName = document.getElementById('fileItemName');
-            console.log('itemName:' + itemName.getAttribute('data-name'))
-            console.log('itemName-data-authorName:' + itemName.getAttribute('data-authorName'))
-            console.log('itemName-text:' + itemName.innerText)
             console.log('itemName-html2:' + t.innerHTML)
             console.log('itemName-html3:' + t.getAttribute('data-name'))
             console.log('itemName-html4:' + t.getAttribute('data-authorName'))
             console.log('itemName-html5:' + t.getAttribute('data-majorName'))
             console.log('itemName-html6:' + t.getAttribute('data-updateFileTime'))
-
-            console.log("dataName:" + t.innerText);
             const row = '文件名称:' + t.getAttribute('data-name') + "<br/>"
             + '作者名称:' + t.getAttribute('data-authorName') + "<br/>"
             + '专业名称:' + t.getAttribute('data-majorName') + "<br/>"
             + '上传时间:' + t.getAttribute('data-updateFileTime'); //获取显示内容
             //小tips
             layer.tips(row, t, {
-                tips: [1, '#3595CC'],
+                tips: [3, '#3595CC'],
                 time: 1500
             })
         }
