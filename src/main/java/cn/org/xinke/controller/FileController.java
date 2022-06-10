@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 @Slf4j
 @CrossOrigin
-@Controller
+@RestController
 public class FileController {
 
     private static final String SLASH = "/";
@@ -57,54 +57,12 @@ public class FileController {
     @Value("${fs.nginxUrl}")
     private String nginxUrl;
 
-    @Value("${admin.uname}")
-    private String uname;
-
-    @Value("${admin.pwd}")
-    private String pwd;
-
     @Value("${domain}")
     private String domain;
 
     @Autowired
     private FileItemService fileItemService;
 
-    /**
-     * 登录页
-     *
-     * @return
-     */
-    @RequestMapping("/login")
-    public String loginPage() {
-        return "login.html";
-    }
-
-    /**
-     * 登录提交认证
-     *
-     * @param user
-     * @param session
-     * @return
-     */
-    @PostMapping("/auth")
-    public String auth(User user, HttpSession session) {
-        if (user.getUname().equals(uname) && user.getPwd().equals(pwd)) {
-            session.setAttribute("LOGIN_USER", user);
-            return "redirect:/";
-        }
-        return "redirect:/login";
-    }
-
-    /**
-     * 首页
-     *
-     * @return
-     */
-    @Login
-    @RequestMapping("/")
-    public String index() {
-        return "index.html";
-    }
 
     /**
      * 上传文件
@@ -114,7 +72,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @PostMapping("/file/upload")
     public Map upload(@RequestParam MultipartFile file, @RequestParam String curPos, @RequestParam String name, @RequestParam String major) {
         log.debug("fileDir0==" + fileDir);
@@ -286,7 +244,7 @@ public class FileController {
      * @return
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @RequestMapping("/api/selectFile")
     public Map selectFile(String fileName, String authorName, String majorName, HttpServletResponse response) {
         ArrayList<String> list = new ArrayList<>();
@@ -556,7 +514,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @RequestMapping("/api/list")
     public Map list(String dir, String accept, String exts) {
         log.info("dir:" + dir);
@@ -721,7 +679,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @RequestMapping("/api/del")
     public Map del(String file) {
         if (fileDir == null) {
@@ -771,7 +729,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @RequestMapping("/api/rename")
     public Map rename(String oldFile, String newFile) {
         if (fileDir == null) {
@@ -850,7 +808,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @RequestMapping("/api/mkdir")
     public Map mkdir(String curPos, String dirName) {
         if (fileDir == null) {
@@ -887,7 +845,7 @@ public class FileController {
      * @return Map
      */
     @Login
-    @ResponseBody
+//    @ResponseBody
     @PostMapping("/api/share")
     public Map share(String file, int time) {
         // 若文件已经分享
